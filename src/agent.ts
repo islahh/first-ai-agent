@@ -12,12 +12,13 @@ export async function runAgent(userPrompt: string) {
   const tools = [
     {
       name: "getWeather",
-      description: "Get weather for a city",
+      description: "Get current live weather for a city",
       parameters: {
         type: Type.OBJECT,
         properties: {
           city: {
             type: Type.STRING,
+            description: "City name such as Kuala Lumpur, London, Tokyo",
           },
         },
         required: ["city"],
@@ -32,13 +33,13 @@ export async function runAgent(userPrompt: string) {
       },
     },
     {
-        name: "getCurrentMyTime",
-        description: "Get current time in Malaysia",
-        parameters: {
-          type: Type.OBJECT,
-          properties: {},
-        },
-    }
+      name: "getCurrentMyTime",
+      description: "Get current time in Malaysia",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {},
+      },
+    },
   ];
 
   const response = await ai.models.generateContent({
@@ -53,10 +54,9 @@ export async function runAgent(userPrompt: string) {
     },
   });
 
-  const functionCall =
-    response.candidates?.[0]?.content?.parts?.find(
-      (part) => part.functionCall
-    )?.functionCall;
+  const functionCall = response.candidates?.[0]?.content?.parts?.find(
+    (part) => part.functionCall,
+  )?.functionCall;
 
   if (!functionCall) {
     return response.text;
@@ -66,9 +66,7 @@ export async function runAgent(userPrompt: string) {
 
   switch (functionCall.name) {
     case "getWeather":
-      toolResult = await getWeather(
-        functionCall.args?.city as string
-      );
+      toolResult = await getWeather(functionCall.args?.city as string);
       break;
 
     case "getCurrentTime":
@@ -80,44 +78,39 @@ export async function runAgent(userPrompt: string) {
       break;
 
     default:
-      throw new Error(
-        `Unknown tool ${functionCall.name}`
-      );
+      throw new Error(`Unknown tool ${functionCall.name}`);
   }
 
-  const finalResponse =
-    await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+  const finalResponse = await ai.models.generateContent({
+    model: "gemini-2.5-flash-lite",
 
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: userPrompt,
-            },
-          ],
-        },
-        {
-          role: "model",
-          parts: [
-            {
-              functionCall,
-            },
-          ],
-        },
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Tool Result: ${JSON.stringify(
-                toolResult
-              )}`,
-            },
-          ],
-        },
-      ],
-    });
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: userPrompt,
+          },
+        ],
+      },
+      {
+        role: "model",
+        parts: [
+          {
+            functionCall,
+          },
+        ],
+      },
+      {
+        role: "user",
+        parts: [
+          {
+            text: `Tool Result: ${JSON.stringify(toolResult)}`,
+          },
+        ],
+      },
+    ],
+  });
 
   return finalResponse.text;
 }

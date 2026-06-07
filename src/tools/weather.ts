@@ -1,7 +1,9 @@
-export async function getWeather(city: string) {
-  return {
-    city,
-    temperature: 30,
-    condition: "Sunny",
-  };
+import {
+  getCurrentWeather,
+} from "../services/weather.service.js";
+
+export async function getWeather(
+  city: string
+) {
+  return await getCurrentWeather(city);
 }
