@@ -1,15 +1,16 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
 
 import { getWeather } from "./tools/weather.js";
 import { getCurrentTime } from "./tools/currentTime.js";
 import { getCurrentMyTime } from "./tools/currentMyTime.js";
+import { getRecentAgentActivityTool } from "./tools/recentAgentActivity.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
 export async function runAgent(userPrompt: string) {
-  const tools = [
+  const tools: FunctionDeclaration[] = [
     {
       name: "getWeather",
       description: "Get current live weather for a city",
@@ -23,7 +24,7 @@ export async function runAgent(userPrompt: string) {
         },
         required: ["city"],
       },
-    },
+    } as FunctionDeclaration,
     {
       name: "getCurrentTime",
       description: "Get current time",
@@ -31,7 +32,7 @@ export async function runAgent(userPrompt: string) {
         type: Type.OBJECT,
         properties: {},
       },
-    },
+    } as FunctionDeclaration,
     {
       name: "getCurrentMyTime",
       description: "Get current time in Malaysia",
@@ -39,7 +40,22 @@ export async function runAgent(userPrompt: string) {
         type: Type.OBJECT,
         properties: {},
       },
-    },
+    } as FunctionDeclaration,
+    {
+      name: "getRecentAgentActivity",
+      description:
+        "Get recent agent activity from PostgreSQL for this CLI assistant",
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          limit: {
+            type: Type.NUMBER,
+            description:
+              "Maximum number of recent rows to return, between 1 and 20",
+          },
+        },
+      },
+    } as FunctionDeclaration,
   ];
 
   const response = await ai.models.generateContent({
@@ -75,6 +91,12 @@ export async function runAgent(userPrompt: string) {
 
     case "getCurrentMyTime":
       toolResult = await getCurrentMyTime();
+      break;
+
+    case "getRecentAgentActivity":
+      toolResult = await getRecentAgentActivityTool(
+        functionCall.args?.limit as number | undefined,
+      );
       break;
 
     default:

@@ -8,6 +8,7 @@ This project demonstrates how to build an AI agent that can:
 * Use tools/functions automatically
 * Fetch real-time weather information
 * Access system information such as current time
+* Query recent agent activity from PostgreSQL
 * Be extended with additional tools and integrations
 
 ## Features
@@ -40,7 +41,8 @@ gemini-agent/
     │
     └── tools/
         ├── weather.ts
-        └── currentTime.ts
+        ├── currentTime.ts
+        └── recentAgentActivity.ts
 ```
 
 ---
@@ -156,6 +158,38 @@ Returns:
 {
   "currentTime": "2026-06-07T09:15:23.123Z"
 }
+```
+
+### Recent Agent Activity Tool
+
+Fetches recent rows from a PostgreSQL table named `agent_activity`.
+
+Example:
+
+```text
+Show me the last 5 agent messages.
+```
+
+Returns:
+
+```json
+{
+  "table": "agent_activity",
+  "limit": 5,
+  "rows": [
+    {
+      "created_at": "2026-06-07T01:22:11.000Z",
+      "role": "user",
+      "content": "Show me the last 5 agent messages."
+    }
+  ]
+}
+```
+
+Environment:
+
+```env
+DATABASE_URL=postgres://user:password@localhost:5432/ai_agent
 ```
 
 ---
