@@ -38,3 +38,22 @@ export async function getRecentAgentActivity(
     rows: result.rows,
   };
 }
+
+export async function recordAgentActivity(
+  role: "user" | "assistant" | "tool",
+  content: string,
+) {
+  if (!pool) {
+    throw new Error(
+      "DATABASE_URL is not set. Add a PostgreSQL connection string to use this tool.",
+    );
+  }
+
+  await pool.query(
+    `
+      insert into agent_activity (role, content)
+      values ($1, $2)
+    `,
+    [role, content],
+  );
+}

@@ -4,12 +4,19 @@ import { getWeather } from "./tools/weather.js";
 import { getCurrentTime } from "./tools/currentTime.js";
 import { getCurrentMyTime } from "./tools/currentMyTime.js";
 import { getRecentAgentActivityTool } from "./tools/recentAgentActivity.js";
+import { recordAgentActivity } from "./services/postgress.service.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
 export async function runAgent(userPrompt: string) {
+  try {
+    await recordAgentActivity("user", userPrompt);
+  } catch {
+    // Logging should not break the chat flow.
+  }
+
   const tools: FunctionDeclaration[] = [
     {
       name: "getWeather",
@@ -133,6 +140,12 @@ export async function runAgent(userPrompt: string) {
       },
     ],
   });
+
+  try {
+    await recordAgentActivity("assistant", finalResponse.text ?? "");
+  } catch {
+    // Logging should not break the chat flow.
+  }
 
   return finalResponse.text;
 }
